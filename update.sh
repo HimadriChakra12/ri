@@ -1,66 +1,125 @@
 #!/usr/bin/env bash
-# update.sh — build AUR packages if newer than what's in the local repo.
-# Requires: git, base-devel, pacman-contrib
 set -euo pipefail
 
-PACKAGES=(
-    "localsend-bin"
-    "wlctl-bin"
-    "xdman-beta-bin"
+PKGS=(
+	localsend-bin
+	wlctl-bin
+	xdman-beta-bin
 )
-REPO_NAME="ri"
-REPO_DIR="$(pwd)/x86_64"
-WORK_DIR="$HOME/.cache/ri-update"
-mkdir -p "$REPO_DIR" "$WORK_DIR"
 
-repo_version() {
-  local f
-  f=$(ls "$REPO_DIR/$1"-[0-9]*.pkg.tar.zst 2>/dev/null | sort -V | tail -n1) || return 0
-  [ -n "$f" ] && pacman -Qp "$f" | awk '{print $2}'
+REPONAME=ri
+REPODIR="$(pwd)/x86_64"
+CACHEDIR="$HOME/.cache/ri-update"
+EDITOR=nvim
+
+mode=full
+case "${1:-}" in
+	--sync-only) mode=sync ;;
+	--push-only) mode=push ;;
+	"") mode=full ;;
+	*) echo "usage: $0 [--sync-only|--push-only]"; exit 1 ;;
+esac
+
+mkdir -p "$REPODIR" "$CACHEDIR"
+
+installed_ver() {
+	local pkg=$1 f
+	f=$(ls "$REPODIR/$pkg"-[0-9]*.pkg.tar.zst 2>/dev/null | sort -V | tail -n1) || return 0
+	[ -n "$f" ] && pacman -Qp "$f" | awk '{print $2}'
 }
 
-sync_pkg() {
-  local pkg=$1 dir="$WORK_DIR/$1"
-  echo "==> [$pkg] checking AUR"
-  if [ -d "$dir/.git" ]; then
-    git -C "$dir" fetch -q origin
-    git -C "$dir" reset -q --hard origin/HEAD 2>/dev/null || git -C "$dir" reset -q --hard origin/master
-  else
-    git clone -q "https://aur.archlinux.org/$pkg.git" "$dir"
-  fi
-
-  local si="$dir/.SRCINFO" name ver rel epoch aur have
-  name=$(awk -F' = ' '/^\tpkgname|^pkgname/{print $2; exit}' "$si")
-  ver=$(awk -F' = ' '/^\tpkgver/{print $2; exit}' "$si")
-  rel=$(awk -F' = ' '/^\tpkgrel/{print $2; exit}' "$si")
-  epoch=$(awk -F' = ' '/^\tepoch/{print $2; exit}' "$si")
-  aur="${epoch:+$epoch:}$ver-$rel"
-
-  have=$(repo_version "$name")
-  if [ -n "$have" ] && [ "$(vercmp "$aur" "$have")" -le 0 ]; then
-    echo "    up to date ($have)"; return 0
-  fi
-  echo "    ${have:+$have -> }${have:-not in repo, }building $aur"
-  (cd "$dir" && makepkg -sf --noconfirm --needed)
-  rm -f "$REPO_DIR/$name"-*.pkg.tar.zst
-  cp -f "$dir"/*.pkg.tar.zst "$REPO_DIR/" 2>/dev/null || true
-  echo "    built $aur"
+aur_ver() {
+	local srcinfo=$1 name ver rel epoch
+	name=$(awk -F' = ' '/^\tpkgname|^pkgname/{print $2; exit}' "$srcinfo")
+	ver=$(awk -F' = ' '/^\tpkgver/{print $2; exit}' "$srcinfo")
+	rel=$(awk -F' = ' '/^\tpkgrel/{print $2; exit}' "$srcinfo")
+	epoch=$(awk -F' = ' '/^\tepoch/{print $2; exit}' "$srcinfo")
+	echo "$name" "${epoch:+$epoch:}$ver-$rel"
 }
 
-changed=0
-for pkg in "${PACKAGES[@]}"; do
-  before=$(ls "$REPO_DIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
-  sync_pkg "$pkg"
-  after=$(ls "$REPO_DIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
-  [ "$before" != "$after" ] && changed=1
-done
+build_pkg() {
+	local pkg=$1 dir="$CACHEDIR/$1"
 
-[ "$changed" -eq 0 ] && { echo "==> Nothing changed"; exit 0; }
+	echo "==> [$pkg] fetching"
+	if [ -d "$dir/.git" ]; then
+		git -C "$dir" fetch -q origin
+		git -C "$dir" reset -q --hard origin/HEAD 2>/dev/null ||
+			git -C "$dir" reset -q --hard origin/master
+	else
+		git clone -q "https://aur.archlinux.org/$pkg.git" "$dir"
+	fi
 
-echo "==> Refreshing repo database"
-(cd "$REPO_DIR" && repo-add "$REPO_NAME.db.tar.zst" *.pkg.tar.zst)
+	local name ver have
+	read -r name ver <<<"$(aur_ver "$dir/.SRCINFO")"
+	have=$(installed_ver "$name")
 
-echo "==> Pushing to GitHub"
-cd "$(pwd)"
-git add -A
-git diff --cached --quiet && echo "    nothing to commit" || { git commit -m "Update repo $(date -u +%Y-%m-%dT%H:%M:%SZ)"; }
+	if [ -n "$have" ] && [ "$(vercmp "$ver" "$have")" -le 0 ]; then
+		echo "    up to date ($have)"
+		return 0
+	fi
+
+	echo "    ${have:+$have -> }${have:-not in repo, }building $ver"
+	(cd "$dir" && makepkg -sf --noconfirm --needed)
+
+	rm -f "$REPODIR/$name"-*.pkg.tar.zst
+	cp -f "$dir"/*.pkg.tar.zst "$REPODIR/" 2>/dev/null || true
+	echo "    built $ver"
+}
+
+sync_all() {
+	local before after changed=0
+	for pkg in "${PKGS[@]}"; do
+		before=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
+		build_pkg "$pkg"
+		after=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
+		[ "$before" != "$after" ] && changed=1
+	done
+
+	if [ "$changed" -eq 1 ]; then
+		echo "==> refreshing db"
+		(cd "$REPODIR" && repo-add "$REPONAME.db.tar.zst" *.pkg.tar.zst)
+	else
+		echo "==> no package changes"
+	fi
+}
+
+push_changes() {
+	echo "==> reviewing changes"
+	git add -A
+
+	if git diff --cached --quiet; then
+		echo "    nothing to commit"
+		return 0
+	fi
+
+	while true; do
+		git status --short
+		echo
+		read -rp "push? [Y=commit+push / e=edit / d=diff / n=abort] " opt
+		case "$opt" in
+			Y|y|"")
+				git commit -m "update repo $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+				git push
+				return 0
+				;;
+			e|E)
+                git status --short | $EDITOR
+				git add -A
+				;;
+			d|D)
+				git diff --cached
+				;;
+			n|N)
+				echo "    aborted, changes staged only"
+				return 0
+				;;
+			*)
+				echo "    unrecognized option"
+				;;
+		esac
+	done
+}
+
+[ "$mode" != push ] && sync_all
+[ "$mode" = sync ] && exit 0
+push_changes
