@@ -21,5 +21,5 @@ sudo pacman -S localsend
 ## Packages
 <!-- PACKAGES:START -->
 - localsend-bin
-- xdman-beta-bin
+- wlctl-bin
 <!-- PACKAGES:END -->
