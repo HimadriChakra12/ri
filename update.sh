@@ -15,25 +15,8 @@ mkdir -p "$REPO_DIR" "$WORK_DIR"
 
 repo_version() {
   local f
-  f=$(ls "$REPO_DIR/$1"-*.pkg.tar.zst 2>/dev/null | sort -V | tail -n1) || return 0
+  f=$(ls "$REPO_DIR/$1"-[0-9]*.pkg.tar.zst 2>/dev/null | sort -V | tail -n1) || return 0
   [ -n "$f" ] && pacman -Qp "$f" | awk '{print $2}'
-}
-
-update_readme() {
-  local readme="$(pwd)/README.md"
-  [ -f "$readme" ] || return 0
-
-  local tmp list
-  tmp=$(mktemp)
-  list=$(printf -- '- %s\n' "${PACKAGES[@]}")
-
-  awk -v list="$list" '
-    /<!-- PACKAGES:START -->/ { print; print list; skip=1; next }
-    /<!-- PACKAGES:END -->/   { skip=0 }
-    !skip { print }
-  ' "$readme" > "$tmp"
-
-  mv "$tmp" "$readme"
 }
 
 sync_pkg() {
@@ -46,19 +29,18 @@ sync_pkg() {
     git clone -q "https://aur.archlinux.org/$pkg.git" "$dir"
   fi
 
-  local pb="$dir/PKGBUILD" name ver rel epoch aur have
-  name=$(awk -F= '/^pkgname=/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$pb")
-  ver=$(awk -F=  '/^pkgver=/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$pb")
-  rel=$(awk -F=  '/^pkgrel=/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$pb")
-  epoch=$(awk -F= '/^epoch=/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$pb")
+  local si="$dir/.SRCINFO" name ver rel epoch aur have
+  name=$(awk -F' = ' '/^\tpkgname|^pkgname/{print $2; exit}' "$si")
+  ver=$(awk -F' = ' '/^\tpkgver/{print $2; exit}' "$si")
+  rel=$(awk -F' = ' '/^\tpkgrel/{print $2; exit}' "$si")
+  epoch=$(awk -F' = ' '/^\tepoch/{print $2; exit}' "$si")
   aur="${epoch:+$epoch:}$ver-$rel"
-  have=$(repo_version "$name")
 
+  have=$(repo_version "$name")
   if [ -n "$have" ] && [ "$(vercmp "$aur" "$have")" -le 0 ]; then
     echo "    up to date ($have)"; return 0
   fi
   echo "    ${have:+$have -> }${have:-not in repo, }building $aur"
-
   (cd "$dir" && makepkg -sf --noconfirm --needed)
   rm -f "$REPO_DIR/$name"-*.pkg.tar.zst
   cp -f "$dir"/*.pkg.tar.zst "$REPO_DIR/" 2>/dev/null || true
@@ -73,14 +55,7 @@ for pkg in "${PACKAGES[@]}"; do
   [ "$before" != "$after" ] && changed=1
 done
 
-update_readme
-
-if [ "$changed" -eq 1 ]; then
-  echo "==> Refreshing repo database"
-  (cd "$REPO_DIR" && repo-add "$REPO_NAME.db.tar.zst" *.pkg.tar.zst)
-else
-  echo "==> No package changes"
-fi
+[ "$changed" -eq 0 ] && { echo "==> Nothing changed"; exit 0; }
 
 echo "==> Refreshing repo database"
 (cd "$REPO_DIR" && repo-add "$REPO_NAME.db.tar.zst" *.pkg.tar.zst)
@@ -88,4 +63,4 @@ echo "==> Refreshing repo database"
 echo "==> Pushing to GitHub"
 cd "$(pwd)"
 git add -A
-git diff --cached --quiet && echo "    nothing to commit" || { git commit -m "Update repo $(date -u +%Y-%m-%dT%H:%M:%SZ)"; git push; }
+git diff --cached --quiet && echo "    nothing to commit" || { git commit -m "Update repo $(date -u +%Y-%m-%dT%H:%M:%SZ)"; }
