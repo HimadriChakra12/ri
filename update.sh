@@ -5,6 +5,7 @@ PKGS=(
 	localsend-bin
 	wlctl-bin
 	xdman-beta-bin
+    ghgrab-bin
 )
 
 REPONAME=ri

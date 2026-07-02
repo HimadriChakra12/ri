@@ -24,3 +24,4 @@ sudo pacman -S localsend
 - localsend-bin
 - xdman-beta-bin
 - wlctl-bin
+- ghgrab-bin
