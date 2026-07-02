@@ -19,6 +19,23 @@ repo_version() {
   [ -n "$f" ] && pacman -Qp "$f" | awk '{print $2}'
 }
 
+update_readme() {
+  local readme="$(pwd)/README.md"
+  [ -f "$readme" ] || return 0
+
+  local tmp list
+  tmp=$(mktemp)
+  list=$(printf -- '- %s\n' "${PACKAGES[@]}")
+
+  awk -v list="$list" '
+    /<!-- PACKAGES:START -->/ { print; print list; skip=1; next }
+    /<!-- PACKAGES:END -->/   { skip=0 }
+    !skip { print }
+  ' "$readme" > "$tmp"
+
+  mv "$tmp" "$readme"
+}
+
 sync_pkg() {
   local pkg=$1 dir="$WORK_DIR/$1"
   echo "==> [$pkg] checking AUR"
@@ -56,7 +73,14 @@ for pkg in "${PACKAGES[@]}"; do
   [ "$before" != "$after" ] && changed=1
 done
 
-[ "$changed" -eq 0 ] && { echo "==> Nothing changed"; exit 0; }
+update_readme
+
+if [ "$changed" -eq 1 ]; then
+  echo "==> Refreshing repo database"
+  (cd "$REPO_DIR" && repo-add "$REPO_NAME.db.tar.zst" *.pkg.tar.zst)
+else
+  echo "==> No package changes"
+fi
 
 echo "==> Refreshing repo database"
 (cd "$REPO_DIR" && repo-add "$REPO_NAME.db.tar.zst" *.pkg.tar.zst)

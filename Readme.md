@@ -1,5 +1,4 @@
 # ri
-
 A personal pacman repository, auto-synced from AUR.
 
 ## Usage
@@ -20,7 +19,7 @@ sudo pacman -S localsend
 ```
 
 ## Packages
-
+<!-- PACKAGES:START -->
 - localsend-bin
 - xdman-beta-bin
-- wlctl-bin
+<!-- PACKAGES:END -->
