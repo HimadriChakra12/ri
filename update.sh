@@ -6,6 +6,7 @@ set -euo pipefail
 PACKAGES=(
     "localsend-bin"
     "wlctl-bin"
+    "xdman-beta-bin"
 )
 REPO_NAME="ri"
 REPO_DIR="$(pwd)/x86_64"
@@ -61,6 +62,6 @@ echo "==> Refreshing repo database"
 (cd "$REPO_DIR" && repo-add "$REPO_NAME.db.tar.zst" *.pkg.tar.zst)
 
 echo "==> Pushing to GitHub"
-cd "$HOME/pkg/ri"
+cd "$(pwd)"
 git add -A
 git diff --cached --quiet && echo "    nothing to commit" || { git commit -m "Update repo $(date -u +%Y-%m-%dT%H:%M:%SZ)"; git push; }
