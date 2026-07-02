@@ -3,7 +3,10 @@
 # Requires: git, base-devel, pacman-contrib
 set -euo pipefail
 
-PACKAGES=("localsend-bin")
+PACKAGES=(
+    "localsend-bin"
+    "wlctl-bin"
+)
 REPO_NAME="ri"
 REPO_DIR="$(pwd)/x86_64"
 WORK_DIR="$HOME/.cache/ri-update"
