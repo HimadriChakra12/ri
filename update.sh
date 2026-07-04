@@ -2,12 +2,13 @@
 set -euo pipefail
 
 PKGS=(
-	localsend-bin
-	wlctl-bin
-	xdman-beta-bin
+    localsend-bin
+    wlctl-bin
+    xdman-beta-bin
     ghgrab-bin
     ibus-avro-git
     jdownloader2
+    qbittorrent-nox-static-bin
 )
 
 REPONAME=ri
@@ -26,9 +27,16 @@ esac
 mkdir -p "$REPODIR" "$CACHEDIR"
 
 installed_ver() {
-	local pkg=$1 f
-	f=$(ls "$REPODIR/$pkg"-[0-9]*.pkg.tar.zst 2>/dev/null | sort -V | tail -n1) || return 0
-	[ -n "$f" ] && pacman -Qp "$f" | awk '{print $2}'
+	local pkg=$1 f name ver best=""
+	for f in "$REPODIR"/*.pkg.tar.zst; do
+		[ -e "$f" ] || continue
+		read -r name ver <<<"$(pacman -Qp "$f" 2>/dev/null)" || continue
+		[ "$name" = "$pkg" ] || continue
+		if [ -z "$best" ] || [ "$(vercmp "$ver" "$best")" -gt 0 ]; then
+			best=$ver
+		fi
+	done
+	echo "$best"
 }
 
 aur_ver() {
