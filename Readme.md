@@ -27,3 +27,4 @@ sudo pacman -S localsend
 - ghgrab-bin
 - ibus-avro-git
 - Jdownloader2
+- rawtherapee-appimage-bin
