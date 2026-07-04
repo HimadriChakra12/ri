@@ -26,3 +26,4 @@ sudo pacman -S localsend
 - wlctl-bin
 - ghgrab-bin
 - ibus-avro-git
+- Jdownloader2

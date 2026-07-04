@@ -7,6 +7,7 @@ PKGS=(
 	xdman-beta-bin
     ghgrab-bin
     ibus-avro-git
+    jdownloader2
 )
 
 REPONAME=ri
