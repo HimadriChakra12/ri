@@ -25,3 +25,4 @@ sudo pacman -S localsend
 - xdman-beta-bin
 - wlctl-bin
 - ghgrab-bin
+- ibus-avro-git

@@ -6,6 +6,7 @@ PKGS=(
 	wlctl-bin
 	xdman-beta-bin
     ghgrab-bin
+    ibus-avro-git
 )
 
 REPONAME=ri
