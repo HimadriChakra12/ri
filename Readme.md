@@ -33,6 +33,20 @@ sudo pacman -S localsend
 
 ayir is a `AppImage` to `Pacman tar` converter.
 
+### Layout
+
+```
+.AppImage/             gitignored, created at runtime
+└── <name>/
+    ├── src/<Appimage>
+    ├── extracted/     squashfs-root, kept for reuse
+    ├── Makefile
+    └── out/
+        ├── PKGBUILD
+        ├── <name>-bin-<ver>-<rel>-x86_64.tar.zst       (Base Tar)
+        └── <name>-bin-<ver>-<rel>-x86_64.pkg.tar.zst   (Pac Pkg)
+```
+
 ``` sh
 make setup APPIMAGE="/path/to/appimage"
 ```
@@ -46,9 +60,17 @@ cd .AppImage/appdir/
 There is a `Makefile` that makes the whole thing into `pacman tar`.
 
 ```
-make deps       #checks the deps
-make convert    #converts to PKGBUILD and tar
-make build      #builds as .pkg.tar
-make install    #install the .pkg.tar
-make copy       #copies to ri/x86_64
+make deps       # optional — setup already ran this once
+make convert    # payload tarball + PKGBUILD
+make build      # makepkg -f
+make install    # pacman -U the result
+make copy       # copies to ri/x86_64
+```
+
+`make list` from the repo root shows every app you've touched and what
+stage it's at (`setup` / `converted` / `built`).
+
+If `convert` guesses the wrong version:
+```bash
+make convert PKGVER=1.2.3
 ```
