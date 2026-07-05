@@ -28,3 +28,27 @@ sudo pacman -S localsend
 - ibus-avro-git
 - Jdownloader2
 - rawtherapee-appimage-bin
+
+## ayir
+
+ayir is a `AppImage` to `Pacman tar` converter.
+
+``` sh
+make setup APPIMAGE="/path/to/appimage"
+```
+
+It creates a `.AppImage/` directory and generates a `appdir/` according to the name.
+
+```
+cd .AppImage/appdir/
+```
+
+There is a `Makefile` that makes the whole thing into `pacman tar`.
+
+```
+make deps       #checks the deps
+make convert    #converts to PKGBUILD and tar
+make build      #builds as .pkg.tar
+make install    #install the .pkg.tar
+make copy       #copies to ri/x86_64
+```

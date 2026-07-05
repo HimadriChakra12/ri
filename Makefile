@@ -30,7 +30,7 @@ help:
 
 setup:
 	@test -n "$(APPIMAGE)" || (echo "APPIMAGE=<path-to.AppImage> is required" && exit 1)
-	@./aimg2pkg/aimg2pkg.sh setup "$(APPIMAGE)"
+	@./ayir/ayir.sh setup "$(APPIMAGE)"
 
 list:
-	@./aimg2pkg/aimg2pkg.sh list
+	@./ayir/ayir.sh list
