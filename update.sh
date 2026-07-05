@@ -26,9 +26,14 @@ esac
 mkdir -p "$REPODIR" "$CACHEDIR"
 
 installed_ver() {
-	local pkg=$1 f
-	f=$(ls "$REPODIR/$pkg"-[0-9]*.pkg.tar.zst 2>/dev/null | sort -V | tail -n1) || return 0
-	[ -n "$f" ] && pacman -Qp "$f" | awk '{print $2}'
+	local pkg=$1 f name
+	for f in "$REPODIR"/*.pkg.tar.zst; do
+		[ -e "$f" ] || continue
+		name=$(pacman -Qp "$f" 2>/dev/null | awk '{print $1}')
+		[ "$name" = "$pkg" ] || continue
+		pacman -Qp "$f" | awk '{print $2}'
+		return 0
+	done
 }
 
 aur_ver() {
