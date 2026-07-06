@@ -8,6 +8,7 @@ PKGS=(
     ghgrab-bin
     ibus-avro-git
     jdownloader2
+    gtk2
 )
 
 REPONAME=ri
