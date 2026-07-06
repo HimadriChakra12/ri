@@ -28,6 +28,7 @@ sudo pacman -S localsend
 - ibus-avro-git
 - Jdownloader2
 - rawtherapee-appimage-bin
+- gtk2
 
 ## ayir
 
