@@ -29,6 +29,7 @@ sudo pacman -S localsend
 - Jdownloader2
 - rawtherapee-appimage-bin
 - gtk2
+- markpad-bin
 
 ## ayir
 
