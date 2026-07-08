@@ -31,6 +31,7 @@ sudo pacman -S localsend
 - gtk2
 - markpad-bin
 - legcord-bin
+- cropgui
 
 ## ayir
 

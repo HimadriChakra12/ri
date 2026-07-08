@@ -10,6 +10,7 @@ PKGS=(
     jdownloader2
     gtk2
     legcord-bin
+    cropgui
 )
 
 REPONAME=ri
