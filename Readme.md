@@ -30,6 +30,7 @@ sudo pacman -S localsend
 - rawtherapee-appimage-bin
 - gtk2
 - markpad-bin
+- legcord-bin
 
 ## ayir
 

@@ -9,6 +9,7 @@ PKGS=(
     ibus-avro-git
     jdownloader2
     gtk2
+    legcord-bin
 )
 
 REPONAME=ri
