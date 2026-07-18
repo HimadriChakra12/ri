@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    libinput-gestures
     rofi-greenclip
 	localsend-bin
     gtk-engine-murrine
