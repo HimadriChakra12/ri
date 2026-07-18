@@ -21,7 +21,9 @@ sudo pacman -S localsend
 
 ## Packages
 
+- rofi-greenclip
 - localsend-bin
+- gtk-engine-murrine
 - xdman-beta-bin
 - wlctl-bin
 - ghgrab-bin

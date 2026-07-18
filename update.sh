@@ -2,7 +2,9 @@
 set -euo pipefail
 
 PKGS=(
+    rofi-greenclip
 	localsend-bin
+    gtk-engine-murrine
 	wlctl-bin
 	xdman-beta-bin
     ghgrab-bin
