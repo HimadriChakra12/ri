@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    gnome-network-displays
     libinput-gestures
     rofi-greenclip
 	localsend-bin
