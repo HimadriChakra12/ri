@@ -5,10 +5,10 @@ PKGS=(
     gnome-network-displays
     libinput-gestures
     rofi-greenclip
-	localsend-bin
+    localsend-bin
     gtk-engine-murrine
-	wlctl-bin
-	xdman-beta-bin
+    wlctl-bin
+    xdman-beta-bin
     ghgrab-bin
     ibus-avro-git
     jdownloader2
