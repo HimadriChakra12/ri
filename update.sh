@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    libjpeg9
     gnome-network-displays
     libinput-gestures
     rofi-greenclip

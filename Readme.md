@@ -21,6 +21,7 @@ sudo pacman -S localsend
 
 ## Packages
 
+- libjpeg9
 - gnome-network-displays
 - libinput-gestures
 - rofi-greenclip
