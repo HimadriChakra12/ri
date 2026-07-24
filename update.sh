@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    sioyek-git
     libjpeg9
     gnome-network-displays
     libinput-gestures

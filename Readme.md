@@ -21,6 +21,7 @@ sudo pacman -S localsend
 
 ## Packages
 
+- sioyek-git
 - libjpeg9
 - gnome-network-displays
 - libinput-gestures
