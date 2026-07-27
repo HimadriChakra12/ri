@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    sxwm
     sioyek-git
     libjpeg9
     gnome-network-displays

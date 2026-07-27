@@ -21,6 +21,7 @@ sudo pacman -S localsend
 
 ## Packages
 
+- sxwm
 - sioyek-git
 - libjpeg9
 - gnome-network-displays
