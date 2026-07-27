@@ -2,13 +2,13 @@
 set -euo pipefail
 
 PKGS=(
+    localsend
     sxwm
     sioyek-git
     libjpeg9
     gnome-network-displays
     libinput-gestures
     rofi-greenclip
-    localsend-bin
     gtk-engine-murrine
     wlctl-bin
     xdman-beta-bin
@@ -16,7 +16,6 @@ PKGS=(
     ibus-avro-git
     jdownloader2
     gtk2
-    legcord-bin
     cropgui
 )
 

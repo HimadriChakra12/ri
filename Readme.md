@@ -27,7 +27,7 @@ sudo pacman -S localsend
 - gnome-network-displays
 - libinput-gestures
 - rofi-greenclip
-- localsend-bin
+- localsend
 - gtk-engine-murrine
 - xdman-beta-bin
 - wlctl-bin
@@ -37,7 +37,6 @@ sudo pacman -S localsend
 - rawtherapee-appimage-bin
 - gtk2
 - markpad-bin
-- legcord-bin
 - cropgui
 
 ## ayir
