@@ -3,11 +3,10 @@ set -euo pipefail
 
 PKGS=(
     telegram-desktop-bin
-    localsend
+    localsend-bin
     sxwm
     sioyek-git
     libjpeg9
-    gnome-network-displays
     libinput-gestures
     rofi-greenclip
     gtk-engine-murrine

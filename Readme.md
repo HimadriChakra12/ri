@@ -25,7 +25,6 @@ sudo pacman -S localsend
 - sxwm
 - sioyek-git
 - libjpeg9
-- gnome-network-displays
 - libinput-gestures
 - rofi-greenclip
 - localsend
