@@ -21,7 +21,6 @@ sudo pacman -S localsend
 
 ## Packages
 
-- telegram-desktop-bin
 - sxwm
 - sioyek-git
 - libjpeg9

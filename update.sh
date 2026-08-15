@@ -2,7 +2,6 @@
 set -euo pipefail
 
 PKGS=(
-    telegram-desktop-bin
     localsend-bin
     sxwm
     sioyek-git
