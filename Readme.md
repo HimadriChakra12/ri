@@ -21,6 +21,7 @@ sudo pacman -S localsend
 
 ## Packages
 
+- freetube
 - sxwm
 - sioyek-git
 - libjpeg9

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    freetube
     localsend-bin
     sxwm
     sioyek-git
