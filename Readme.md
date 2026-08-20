@@ -21,6 +21,7 @@ sudo pacman -S localsend
 
 ## Packages
 
+- telegram-desktop-bin
 - freetube
 - sxwm
 - sioyek-git

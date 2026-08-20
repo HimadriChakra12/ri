@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    telegram-desktop-bin
     freetube
     localsend-bin
     sxwm
