@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    proton-authenticator-bin
     telegram-desktop-bin
     freetube
     localsend-bin
