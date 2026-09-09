@@ -21,6 +21,7 @@ sudo pacman -S localsend
 
 ## Packages
 
+- gimp-devel
 - proton-authenticator-bin
 - telegram-desktop-bin
 - freetube

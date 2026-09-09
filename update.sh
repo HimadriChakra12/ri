@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    gimp-devel
     proton-authenticator-bin
     telegram-desktop-bin
     freetube
