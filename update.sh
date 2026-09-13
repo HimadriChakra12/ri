@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    cloudflare-warp-bin
     gimp-devel
     proton-authenticator-bin
     telegram-desktop-bin
@@ -140,6 +141,7 @@ push_changes() {
 	done
 }
 
+rm -rf ./x86_64/*-debug-*.pkg.tar.zst
 [ "$mode" != push ] && sync_all
 [ "$mode" = sync ] && exit 0
 push_changes
