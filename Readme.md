@@ -24,10 +24,9 @@ sudo pacman -S localsend
 - cloudflare-warp-bin
 - gimp-devel
 - proton-authenticator-bin
-- telegram-desktop-bin
+- forkgram-bin
 - freetube
 - sxwm
-- sioyek-git
 - libjpeg9
 - libinput-gestures
 - rofi-greenclip
