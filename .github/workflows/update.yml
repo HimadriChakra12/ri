@@ -1,0 +1,63 @@
+name: Update repo
+
+on:
+  schedule:
+    # daily at 06:00 UTC — adjust to taste
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-repo
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Install base tools
+        run: |
+          pacman -Syu --noconfirm --needed git sudo
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create unprivileged build user
+        run: |
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/builder
+
+      - name: Cache AUR clones + build artifacts
+        uses: actions/cache@v4
+        with:
+          path: /home/builder/.cache/ri-update
+          key: ri-update-cache-${{ github.run_id }}
+          restore-keys: |
+            ri-update-cache-
+
+      - name: Fix ownership
+        run: |
+          chown -R builder:builder "$GITHUB_WORKSPACE" /home/builder/.cache/ri-update
+
+      - name: Mark workspace safe for git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          su builder -c "git config --global --add safe.directory '$GITHUB_WORKSPACE'"
+
+      - name: Configure git identity + push auth
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+      - name: Sync + build + push
+        working-directory: ${{ github.workspace }}
+        run: |
+          su builder -c "CI=true bash update.sh --no-install --yes"

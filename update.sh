@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    gameoftrees
     forkgram-bin
     latex-pdfpages
     cloudflare-warp-bin
@@ -29,12 +30,36 @@ CACHEDIR="$HOME/.cache/ri-update"
 EDITOR=nvim
 
 mode=full
-case "${1:-}" in
-	--sync-only) mode=sync ;;
-	--push-only) mode=push ;;
-	"") mode=full ;;
-	*) echo "usage: $0 [--sync-only|--push-only]"; exit 1 ;;
-esac
+TARGETS=()
+no_install=0
+yes=0
+for arg in "${@:-}"; do
+	[ -z "$arg" ] && continue
+	case "$arg" in
+		--sync-only) mode=sync ;;
+		--push-only) mode=push ;;
+		--no-install) no_install=1 ;;
+		--yes|-y) yes=1 ;;
+		--*) echo "usage: $0 [--sync-only|--push-only] [--no-install] [--yes] [pkg ...]"; exit 1 ;;
+		*) TARGETS+=("$arg") ;;
+	esac
+done
+# CI runs are non-interactive by definition: auto-confirm the push
+[ -n "${CI:-}" ] && yes=1
+
+full_run=1
+if [ ${#TARGETS[@]} -eq 0 ]; then
+	TARGETS=("${PKGS[@]}")
+else
+	full_run=0
+	for t in "${TARGETS[@]}"; do
+		found=0
+		for pkg in "${PKGS[@]}"; do
+			[ "$pkg" = "$t" ] && { found=1; break; }
+		done
+		[ "$found" -eq 1 ] || { echo "unknown package: $t (not in PKGS)"; exit 1; }
+	done
+fi
 
 mkdir -p "$REPODIR" "$CACHEDIR"
 
@@ -57,6 +82,8 @@ aur_ver() {
 	epoch=$(awk -F' = ' '/^\tepoch/{print $2; exit}' "$srcinfo")
 	echo "$name" "${epoch:+$epoch:}$ver-$rel"
 }
+
+BUILT=()
 
 build_pkg() {
 	local pkg=$1 dir="$CACHEDIR/$1"
@@ -84,12 +111,60 @@ build_pkg() {
 
 	rm -f "$REPODIR/$name"-*.pkg.tar.zst
 	cp -f "$dir"/*.pkg.tar.zst "$REPODIR/" 2>/dev/null || true
+	BUILT+=("$name")
 	echo "    built $ver"
+}
+
+# install every package that was freshly built this run
+install_built() {
+	[ "$no_install" -eq 1 ] && return 0
+	[ ${#BUILT[@]} -eq 0 ] && return 0
+	local files=() name f
+	for name in "${BUILT[@]}"; do
+		for f in "$REPODIR/$name"-*.pkg.tar.zst; do
+			[ -e "$f" ] && files+=("$f")
+		done
+	done
+	[ ${#files[@]} -eq 0 ] && return 0
+	echo "==> installing: ${BUILT[*]}"
+	sudo pacman -U --noconfirm "${files[@]}"
+}
+
+# remove any packages present in the repo db that are no longer listed in PKGS
+remove_stale() {
+	local f name keep stale=()
+	for f in "$REPODIR"/*.pkg.tar.zst; do
+		[ -e "$f" ] || continue
+		name=$(pacman -Qp "$f" 2>/dev/null | awk '{print $1}')
+		[ -n "$name" ] || continue
+		keep=0
+		for pkg in "${PKGS[@]}"; do
+			[ "$pkg" = "$name" ] && { keep=1; break; }
+		done
+		[ "$keep" -eq 0 ] && stale+=("$name")
+	done
+	if [ ${#stale[@]} -gt 0 ]; then
+		for name in "${stale[@]}"; do
+			echo "==> [$name] no longer in PKGS, removing"
+			rm -f "$REPODIR/$name"-*.pkg.tar.zst
+		done
+		(cd "$REPODIR" && repo-remove "$REPONAME.db.tar.zst" "${stale[@]}")
+	fi
 }
 
 sync_all() {
 	local before after changed=0
-	for pkg in "${PKGS[@]}"; do
+
+	# stale removal only makes sense on a full run, otherwise targeting a
+	# single package would wipe out everything else in the repo
+	if [ "$full_run" -eq 1 ]; then
+		before=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
+		remove_stale
+		after=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
+		[ "$before" != "$after" ] && changed=1
+	fi
+
+	for pkg in "${TARGETS[@]}"; do
 		before=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
 		build_pkg "$pkg"
 		after=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
@@ -102,6 +177,8 @@ sync_all() {
 	else
 		echo "==> no package changes"
 	fi
+
+	install_built
 }
 
 push_changes() {
@@ -110,6 +187,12 @@ push_changes() {
 
 	if git diff --cached --quiet; then
 		echo "    nothing to commit"
+		return 0
+	fi
+
+	if [ "$yes" -eq 1 ]; then
+		git commit -m "update repo $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+		git push
 		return 0
 	fi
 
