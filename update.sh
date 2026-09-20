@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PKGS=(
+    rawtherapee-git
     gameoftrees
     forkgram-bin
     latex-pdfpages
