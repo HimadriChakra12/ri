@@ -128,13 +128,42 @@ install_built() {
 	sudo pacman -U --noconfirm "${files[@]}"
 }
 
+# keep only the newest version of every package file on disk — guards
+# against duplicates left over from any older/partial run, and prevents
+# remove_stale from ever seeing the same name twice
+dedupe_versions() {
+	local f name ver
+	declare -A best_ver best_file
+	for f in "$REPODIR"/*.pkg.tar.zst; do
+		[ -e "$f" ] || continue
+		name=$(pacman -Qp "$f" 2>/dev/null | awk '{print $1}')
+		ver=$(pacman -Qp "$f" 2>/dev/null | awk '{print $2}')
+		[ -n "$name" ] && [ -n "$ver" ] || continue
+		if [ -z "${best_ver[$name]:-}" ]; then
+			best_ver[$name]=$ver
+			best_file[$name]=$f
+		elif [ "$(vercmp "$ver" "${best_ver[$name]}")" -gt 0 ]; then
+			echo "==> [$name] removing superseded duplicate ${best_ver[$name]}"
+			rm -f "${best_file[$name]}"
+			best_ver[$name]=$ver
+			best_file[$name]=$f
+		else
+			echo "==> [$name] removing superseded duplicate $ver"
+			rm -f "$f"
+		fi
+	done
+}
+
 # remove any packages present in the repo db that are no longer listed in PKGS
 remove_stale() {
 	local f name keep stale=()
+	declare -A seen
 	for f in "$REPODIR"/*.pkg.tar.zst; do
 		[ -e "$f" ] || continue
 		name=$(pacman -Qp "$f" 2>/dev/null | awk '{print $1}')
 		[ -n "$name" ] || continue
+		[ -n "${seen[$name]:-}" ] && continue
+		seen[$name]=1
 		keep=0
 		for pkg in "${PKGS[@]}"; do
 			[ "$pkg" = "$name" ] && { keep=1; break; }
@@ -146,12 +175,19 @@ remove_stale() {
 			echo "==> [$name] no longer in PKGS, removing"
 			rm -f "$REPODIR/$name"-*.pkg.tar.zst
 		done
-		(cd "$REPODIR" && repo-remove "$REPONAME.db.tar.zst" "${stale[@]}")
+		# never let a single stale-removal quirk (e.g. a name the db already
+		# lacks) abort the whole run under set -e
+		(cd "$REPODIR" && repo-remove "$REPONAME.db.tar.zst" "${stale[@]}") || true
 	fi
 }
 
 sync_all() {
 	local before after changed=0
+
+	before=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
+	dedupe_versions
+	after=$(ls "$REPODIR"/*.pkg.tar.zst 2>/dev/null | md5sum || true)
+	[ "$before" != "$after" ] && changed=1
 
 	# stale removal only makes sense on a full run, otherwise targeting a
 	# single package would wipe out everything else in the repo
