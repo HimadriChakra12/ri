@@ -4,12 +4,9 @@ set -euo pipefail
 PKGS=(
     rawtherapee-git
     gameoftrees
-    forkgram-bin
     latex-pdfpages
     cloudflare-warp-bin
     gimp-devel
-    proton-authenticator-bin
-    freetube
     localsend-bin
     sxwm
     libjpeg9
