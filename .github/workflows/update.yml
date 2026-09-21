@@ -48,6 +48,7 @@ jobs:
 
       - name: Fix ownership
         run: |
+          mkdir -p /home/builder/.cache/ri-update
           chown -R builder:builder "$GITHUB_WORKSPACE" /home/builder/.cache/ri-update
 
       - name: Mark workspace safe for git
