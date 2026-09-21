@@ -22,6 +22,10 @@ jobs:
     steps:
       - name: Install base tools
         run: |
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -Sy --noconfirm --needed reflector
+          reflector --latest 10 --sort rate --protocol https --save /etc/pacman.d/mirrorlist || true
           pacman -Syu --noconfirm --needed git sudo
 
       - name: Checkout
